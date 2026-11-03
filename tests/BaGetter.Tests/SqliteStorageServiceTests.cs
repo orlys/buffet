@@ -20,13 +20,22 @@ public class SqliteStorageServiceTests : IDisposable
     public SqliteStorageServiceTests()
     {
         _databasePath = Path.Combine(Path.GetTempPath(), $"bagetter-storage-{Guid.NewGuid():N}.db");
-        var connectionString = $"Data Source={_databasePath}";
 
-        // Create the StorageBlobs table the same way the app does: through the migrations.
+        // A short busy timeout turns lock waits into fast failures.
+        var connectionString = $"Data Source={_databasePath};Default Timeout=2";
+
+        // Start from a pre-existing file in rollback-journal mode, like a database created by upstream BaGetter.
+        // (EF only switches to WAL when it creates the file itself.)
+        using (var connection = new SqliteConnection(connectionString))
+        {
+            connection.Open();
+        }
+
+        // Create the StorageBlobs table the same way the app does at startup.
         var efOptions = new DbContextOptionsBuilder<SqliteContext>().UseSqlite(connectionString).Options;
         using (var context = new SqliteContext(efOptions, new Snapshot<BaGetterOptions>(new BaGetterOptions())))
         {
-            context.Database.Migrate();
+            context.RunMigrationsAsync(default).GetAwaiter().GetResult();
         }
 
         _target = new SqliteStorageService(new Snapshot<DatabaseOptions>(new DatabaseOptions { ConnectionString = connectionString }));
@@ -78,6 +87,17 @@ public class SqliteStorageServiceTests : IDisposable
 
         Assert.Equal(StoragePutResult.Conflict, await _target.PutAsync("x", Content("second"), "text/plain"));
         Assert.Equal("first", await ReadAsync("x"));
+    }
+
+    [Fact]
+    public async Task AnOpenDownloadDoesNotBlockWrites()
+    {
+        await _target.PutAsync("held", Content("being downloaded"), "text/plain");
+
+        // A download keeps its blob stream open while the response is sent; pushes and download counters must still commit.
+        using var download = await _target.GetAsync("held");
+
+        Assert.Equal(StoragePutResult.Success, await _target.PutAsync("other", Content("pushed meanwhile"), "text/plain"));
     }
 
     [Fact]
