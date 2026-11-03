@@ -25,6 +25,25 @@ dotnet test BaGetter.slnx
 
 `Dockerfile` 只 restore 和 publish `src/BaGetter`。
 
+## 部署（nuget.orika.net）
+
+跑在 homelab 的 K8s：namespace `nuget`，manifest 是 homelab repo 的 `k8s/nuget/bagetter.yaml`；資料是 ms-worker-02 上 hostPath `/data/nuget` 裡的 `db/bagetter.db`。
+
+建 image 不需要 Docker，用 SDK 直接推到 microk8s 的 registry：
+
+```shell
+kubectl -n container-registry port-forward svc/registry 5000:5000   # 另開一個終端
+DOTNET_CONTAINER_INSECURE_REGISTRIES=localhost:5000 dotnet publish src/BaGetter/BaGetter.csproj -c Release -r linux-x64 --self-contained false \
+  -t:PublishContainer -p:ContainerRegistry=localhost:5000 -p:ContainerRepository=bagetter \
+  "-p:ContainerImageTags=\"<版本>;<commit>\"" -p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:10.0 -p:ContainerUser=root
+```
+
+節點用 `localhost:32000/bagetter:<版本>` 拉 image。改 manifest 的 image 之後 `kubectl apply`；Deployment 是 Recreate，切換約 20 秒。
+
+- `ContainerUser=root`：hostPath 裡的檔案屬於 root，SDK 預設的非 root `app` 使用者寫不了資料庫。
+- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。下載會一邊串流 blob 一邊持有讀取鎖，在 rollback journal 模式下，並行 restore 時寫入下載次數會失敗，錯誤是 `database is locked`。所以備份時要連同 `-wal`/`-shm` 一起，或先把 Deployment 縮到 0。
+- 從上游 BaGetter（檔案系統儲存）搬過來時，只需要做一次 `dotnet /app/BaGetter.dll import files /data`。2026-11-04 已經做過：914 個檔案全部匯入，330 個 nupkg 下載回來比對 SHA-256 全部相同。
+
 ## 上傳套件
 
 網頁上沒有上傳頁，請用 NuGet 用戶端推送。service index 是 `https://<host>/v3/index.json`；如果有設 `PathBase`，要接在 host 後面。
