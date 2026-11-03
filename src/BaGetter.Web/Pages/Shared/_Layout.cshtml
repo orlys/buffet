@@ -4,6 +4,7 @@
 @using Microsoft.Extensions.Options
 
 @inject IOptions<StatisticsOptions> StatisticsOptions
+@inject IOptions<UploadOptions> UploadOptions
 @inject ApplicationVersion Version
 
 <!DOCTYPE html>
@@ -21,7 +22,7 @@
     <link rel="stylesheet" href="~/_content/BaGetter.Web/lib/office-ui-fabric-core/dist/css/fabric.min.css" />
     <link rel="stylesheet" href="~/_content/BaGetter.Web/css/site.css" />
 
-    <title>@ViewData["Title"] - BaGetter</title>
+    <title>@ViewData["Title"]</title>
 </head>
 <body>
     <header>
@@ -31,7 +32,10 @@
                     <div id="navbar" class="col-sm-12">
                         <ul class="nav navbar-nav" role="tablist">
                             <li role="presentation"><a asp-area="" asp-page="/Index" role="tab" nav-link><span>Packages</span></a></li>
-                            <li role="presentation"><a asp-area="" asp-page="/Upload" role="tab" nav-link><span>Upload</span></a></li>
+                            @if (UploadOptions.Value.EnableUploadPage)
+                            {
+                                <li role="presentation"><a asp-area="" asp-page="/Upload" role="tab" nav-link><span>Upload</span></a></li>
+                            }
                             @if (StatisticsOptions.Value.EnableStatisticsPage)
                             {
                                 <li role="presentation"><a asp-area="" asp-page="/Statistics" role="tab" nav-link><span>Statistics</span></a></li>
@@ -75,13 +79,6 @@
     <main role="main" class="container main-container">
         @RenderBody()
     </main>
-
-    <footer class="footer">
-        <p>
-            Version: @Version.Version
-        </p>
-        @Html.AddReleaseInformationAsComment()
-    </footer>
 
     <script src="~/_content/BaGetter.Web/lib/alpinejs/dist/alpine.js"></script>
 

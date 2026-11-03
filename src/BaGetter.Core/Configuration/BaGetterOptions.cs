@@ -72,5 +72,7 @@ public class BaGetterOptions
 
     public StatisticsOptions Statistics { get; set; }
 
+    public UploadOptions Upload { get; set; }
+
     public NugetAuthenticationOptions Authentication { get; set; }
 }
