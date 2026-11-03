@@ -10,19 +10,18 @@ namespace BaGetter.Tests;
 
 public class HostIntegrationTests
 {
-    private readonly string DatabaseTypeKey = "Database:Type";
     private readonly string ConnectionStringKey = "Database:ConnectionString";
 
     [Fact]
-    public void ThrowsIfDatabaseTypeInvalid()
+    public void IgnoresLegacyDatabaseType()
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "InvalidType" }
+            { "Database:Type", "MySql" },
+            { ConnectionStringKey, "..." }
         });
 
-        Assert.Throws<InvalidOperationException>(
-            () => provider.GetRequiredService<IContext>());
+        Assert.IsType<SqliteContext>(provider.GetRequiredService<IContext>());
     }
 
     [Fact]
@@ -30,7 +29,6 @@ public class HostIntegrationTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "Sqlite" },
             { ConnectionStringKey, "..." }
         });
 
@@ -42,7 +40,6 @@ public class HostIntegrationTests
     {
         var provider = BuildServiceProvider(new Dictionary<string, string>
         {
-            { DatabaseTypeKey, "Sqlite" },
             { ConnectionStringKey, "..." }
         });
 
@@ -57,6 +54,14 @@ public class HostIntegrationTests
         var context = provider.GetRequiredService<IContext>();
 
         Assert.IsType<SqliteContext>(context);
+    }
+
+    [Fact]
+    public void StoresFilesInSqlite()
+    {
+        var provider = BuildServiceProvider();
+
+        Assert.IsType<SqliteStorageService>(provider.GetRequiredService<IStorageService>());
     }
 
     private IServiceProvider BuildServiceProvider(Dictionary<string, string> configs = null)

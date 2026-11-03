@@ -32,9 +32,7 @@ RUN dotnet publish BaGetter \
     -a $TARGETARCH
 
 # create default folders
-RUN mkdir -p "/data/packages" \
-    mkdir -p "/data/symbols" \
-    mkdir -p "/data/db"
+RUN mkdir -p "/data/db"
 
 ## Create final image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
@@ -42,10 +40,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 RUN apk add --no-cache icu-libs icu-data-full tzdata
 # disable the invariant mode (set in base image)
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
-# set default configurations; use the `/data` folder for packages, symbols and the SQLite database
-ENV Storage__Path "/data"
-ENV Search__Type "Database"
-ENV Database__Type "Sqlite"
+# packages, symbols and metadata all live in this one SQLite file; mount `/data` to keep it
 ENV Database__ConnectionString "Data Source=/data/db/bagetter.db"
 LABEL org.opencontainers.image.source="https://github.com/bagetter/BaGetter"
 # copy default folders

@@ -42,7 +42,6 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
             "BaGetterTests",
             Guid.NewGuid().ToString("N"));
         var sqlitePath = Path.Combine(tempPath, "BaGetter.db");
-        var storagePath = Path.Combine(tempPath, "Packages");
 
         Directory.CreateDirectory(tempPath);
 
@@ -64,11 +63,7 @@ public class BaGetterApplication : WebApplicationFactory<Startup>
                 // Setup the integration test configuration.
                 var dict = new Dictionary<string, string>
                 {
-                    { "Database:Type", "Sqlite" },
                     { "Database:ConnectionString", $"Data Source={sqlitePath}" },
-                    { "Storage:Type", "FileSystem" },
-                    { "Storage:Path", storagePath },
-                    { "Search:Type", "Database" },
                     { "Mirror:Enabled", _upstreamClient != null ? "true": "false" },
                     { "Mirror:PackageSource", "http://localhost/v3/index.json" },
                 };

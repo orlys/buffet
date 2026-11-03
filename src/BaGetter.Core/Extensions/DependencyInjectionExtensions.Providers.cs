@@ -9,12 +9,6 @@ namespace BaGetter.Core;
 
 public static partial class DependencyInjectionExtensions
 {
-    private static readonly string DatabaseTypeKey = $"{nameof(BaGetterOptions.Database)}:{nameof(DatabaseOptions.Type)}";
-    private static readonly string SearchTypeKey = $"{nameof(BaGetterOptions.Search)}:{nameof(SearchOptions.Type)}";
-    private static readonly string StorageTypeKey = $"{nameof(BaGetterOptions.Storage)}:{nameof(StorageOptions.Type)}";
-
-    private static readonly string DatabaseSearchType = "Database";
-
     /// <summary>
     /// Add a new provider to the dependency injection container. The provider may
     /// provide an implementation of the service, or it may return null.
@@ -34,41 +28,13 @@ public static partial class DependencyInjectionExtensions
     }
 
     /// <summary>
-    /// Determine whether a database type is currently active.
+    /// Registers <typeparamref name="TContext"/> as the only database, which also serves search.
+    /// There is no database or search type to select from.
     /// </summary>
-    /// <param name="config">The application's configuration.</param>
-    /// <param name="value">The database type that should be checked.</param>
-    /// <returns>Whether the database type is active.</returns>
-    public static bool HasDatabaseType(this IConfiguration config, string value)
-    {
-        return config[DatabaseTypeKey].Equals(value, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Determine whether a search type is currently active.
-    /// </summary>
-    /// <param name="config">The application's configuration.</param>
-    /// <param name="value">The search type that should be checked.</param>
-    /// <returns>Whether the search type is active.</returns>
-    public static bool HasSearchType(this IConfiguration config, string value)
-    {
-        return config[SearchTypeKey].Equals(value, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Determine whether a storage type is currently active.
-    /// </summary>
-    /// <param name="config">The application's configuration.</param>
-    /// <param name="value">The storage type that should be checked.</param>
-    /// <returns>Whether the database type is active.</returns>
-    public static bool HasStorageType(this IConfiguration config, string value)
-    {
-        return config[StorageTypeKey].Equals(value, StringComparison.OrdinalIgnoreCase);
-    }
-
+    /// <param name="name">The name of the database health check.</param>
     public static IServiceCollection AddBaGetDbContextProvider<TContext>(
         this IServiceCollection services,
-        string databaseType)
+        string name)
         where TContext : DbContext, IContext
     {
         services.TryAddScoped<IContext>(provider => provider.GetRequiredService<TContext>());
@@ -76,38 +42,17 @@ public static partial class DependencyInjectionExtensions
 
         services.AddDbContext<TContext>();
 
-        services.AddProvider<IContext>((provider, config) =>
-        {
-            if (!config.HasDatabaseType(databaseType)) return null;
+        services.AddProvider<IContext>((provider, config) => provider.GetRequiredService<TContext>());
 
-            return provider.GetRequiredService<TContext>();
-        });
+        services.AddProvider<IPackageDatabase>((provider, config) => provider.GetRequiredService<PackageDatabase>());
 
-        services.AddProvider<IPackageDatabase>((provider, config) =>
-        {
-            if (!config.HasDatabaseType(databaseType)) return null;
+        services.AddProvider<ISearchIndexer>((provider, config) => provider.GetRequiredService<NullSearchIndexer>());
 
-            return provider.GetRequiredService<PackageDatabase>();
-        });
+        services.AddProvider<ISearchService>((provider, config) => provider.GetRequiredService<DatabaseSearchService>());
 
-        services.AddProvider<ISearchIndexer>((provider, config) =>
-        {
-            if (!config.HasSearchType(DatabaseSearchType)) return null;
-            if (!config.HasDatabaseType(databaseType)) return null;
-
-            return provider.GetRequiredService<NullSearchIndexer>();
-        });
-
-        services.AddProvider<ISearchService>((provider, config) =>
-        {
-            if (!config.HasSearchType(DatabaseSearchType)) return null;
-            if (!config.HasDatabaseType(databaseType)) return null;
-
-            return provider.GetRequiredService<DatabaseSearchService>();
-        });
-
+        // Untagged, so the health endpoint always includes it.
         services.AddHealthChecks()
-            .AddDbContextCheck<TContext>(databaseType, tags: [databaseType]);
+            .AddDbContextCheck<TContext>(name);
 
         return services;
     }

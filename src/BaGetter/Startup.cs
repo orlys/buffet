@@ -2,7 +2,6 @@ using System;
 using BaGetter.Authentication;
 using BaGetter.Core;
 using BaGetter.Core.Extensions;
-using BaGetter.Tencent;
 using BaGetter.Web;
 using BaGetter.Web.Authentication;
 using Microsoft.AspNetCore.Authentication;
@@ -58,20 +57,9 @@ public class Startup
         app.AddNugetBasicHttpAuthentication();
         app.AddNugetBasicHttpAuthorization();
 
-        // Add database providers.
-        // ponytail: SQLite-only build; re-add the other providers here, in ValidateBaGetterOptions and BaGetter.csproj to bring them back.
+        // One SQLite file holds the metadata, the search index and the package files; nothing to select.
         app.AddSqliteDatabase();
-
-        // Add storage providers.
-        app.AddFileStorage();
-        app.AddAliyunOssStorage();
-        app.AddAwsS3Storage();
-        app.AddAzureBlobStorage();
-        app.AddGoogleCloudStorage();
-        app.AddTencentOssStorage();
-
-        // Add search providers.
-        //app.AddAzureSearch();
+        app.AddSqliteStorage();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
