@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using BaGetter.Core.Statistics;
 using BaGetter.Protocol;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +71,6 @@ public static partial class DependencyInjectionExtensions
         services.AddBaGetterOptions<SearchOptions>(nameof(BaGetterOptions.Search));
         services.AddBaGetterOptions<StorageOptions>(nameof(BaGetterOptions.Storage));
         services.AddBaGetterOptions<StatisticsOptions>(nameof(BaGetterOptions.Statistics));
-        services.AddBaGetterOptions<UploadOptions>(nameof(BaGetterOptions.Upload));
     }
 
     private static void AddBaGetServices(this IServiceCollection services)
@@ -103,7 +101,6 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<IServiceIndexService, BaGetterServiceIndex>();
         services.TryAddTransient<ISymbolIndexingService, SymbolIndexingService>();
         services.TryAddTransient<ISymbolStorageService, SymbolStorageService>();
-        services.TryAddTransient<IStatisticsService, StatisticsService>();
 
         services.TryAddTransient<DatabaseSearchService>();
         services.TryAddTransient<FileStorageService>();

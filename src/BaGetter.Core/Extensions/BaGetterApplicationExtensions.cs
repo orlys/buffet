@@ -1,6 +1,5 @@
 using System;
 using BaGetter.Core;
-using BaGetter.Core.Statistics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -34,12 +33,6 @@ public static class BaGetterApplicationExtensions
     {
         app.Services.TryAddTransient<ISearchIndexer>(provider => provider.GetRequiredService<NullSearchIndexer>());
         app.Services.TryAddTransient<ISearchService>(provider => provider.GetRequiredService<NullSearchService>());
-        return app;
-    }
-
-    public static BaGetterApplication AddStatistics(this BaGetterApplication app)
-    {
-        app.Services.TryAddSingleton<IStatisticsService, StatisticsService>();
         return app;
     }
 }
