@@ -40,6 +40,22 @@ public class Program
                     await importer.ImportAsync(cancellationToken);
                 });
             });
+
+            import.Command("files", files =>
+            {
+                files.Description = "Copy an upstream BaGetter storage folder (packages/, symbols/) into SQLite storage.";
+                var directory = files.Argument("directory", "The old Storage:Path folder").IsRequired();
+
+                files.OnExecuteAsync(async cancellationToken =>
+                {
+                    await host.RunMigrationsAsync(cancellationToken);
+
+                    using var scope = host.Services.CreateScope();
+                    var importer = ActivatorUtilities.CreateInstance<FileStorageImporter>(scope.ServiceProvider);
+
+                    return await importer.ImportAsync(directory.Value, cancellationToken) == 0 ? 0 : 1;
+                });
+            });
         });
 
         app.Option("--urls", "The URLs that BaGetter should bind to.", CommandOptionType.SingleValue);
