@@ -63,6 +63,12 @@ public class SqliteContext : AbstractContext<SqliteContext>
         }
 
         await base.RunMigrationsAsync(cancellationToken);
+
+        // Downloads stream blobs out of the database while holding a read lock. In rollback-journal mode that blocks
+        // every writer (download counters, pushes) with "database is locked"; WAL lets readers and writers run together.
+        // EF only picks WAL for files it creates, so switch databases created by upstream BaGetter too. The mode is
+        // stored in the file and cannot be changed inside a transaction, hence after the migrations.
+        await Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", cancellationToken);
     }
 
     /// <summary>
