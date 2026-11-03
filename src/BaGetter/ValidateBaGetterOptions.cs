@@ -19,11 +19,7 @@ public class ValidateBaGetterOptions
     private static readonly HashSet<string> ValidDatabaseTypes
         = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "AzureTable",
-            "MySql",
-            "PostgreSql",
             "Sqlite",
-            "SqlServer",
         };
 
     private static readonly HashSet<string> ValidStorageTypes

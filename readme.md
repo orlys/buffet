@@ -30,7 +30,47 @@ With IIS ([official microsoft documentation](https://learn.microsoft.com/aspnet/
 3. Unpack the zip file contents to a folder of your choice
 4. Create a new or configure an existing IIS site to point its physical path to the folder where you unpacked the zip file
 
-For more information, please refer to the [documentation].
+For more information, please refer to the [documentation] at <https://www.bagetter.com/docs>. This build's web UI does not link to it.
+
+## 📤 Uploading packages
+
+This build has no upload page in the web UI; push packages with a NuGet client.
+Use the service index `https://<your-host>/v3/index.json` (append your `PathBase` to the host if you set one).
+If an API key is configured (`ApiKey` or `Authentication:ApiKeys`), pass it with the key option; otherwise any value works.
+
+.NET CLI (also pushes a matching `.snupkg` symbol package next to the `.nupkg`):
+
+```shell
+dotnet nuget push -s https://<your-host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+NuGet CLI:
+
+```shell
+nuget push -Source https://<your-host>/v3/index.json -ApiKey <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+Paket:
+
+```shell
+paket push --url https://<your-host> --api-key <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+If `Authentication:Credentials` is configured, the service index also needs basic auth, so register the source with credentials and push to it by name (add `--store-password-in-clear-text` on Linux/macOS):
+
+```shell
+dotnet nuget add source https://<your-host>/v3/index.json -n bagetter -u <USER> -p <PASSWORD>
+dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+Recent NuGet clients refuse to push to a plain `http://` source. Register it with `--allow-insecure-connections` (combine with `-u`/`-p` if needed) and push to it by name:
+
+```shell
+dotnet nuget add source http://<your-host>/v3/index.json -n bagetter --allow-insecure-connections
+dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+Pushing the same id and version twice is rejected with `409 Conflict` unless `AllowPackageOverwrites` is enabled.
 
 ## 📦 Features
 

@@ -59,11 +59,8 @@ public class Startup
         app.AddNugetBasicHttpAuthorization();
 
         // Add database providers.
-        app.AddAzureTableDatabase();
-        app.AddMySqlDatabase();
-        app.AddPostgreSqlDatabase();
+        // ponytail: SQLite-only build; re-add the other providers here, in ValidateBaGetterOptions and BaGetter.csproj to bring them back.
         app.AddSqliteDatabase();
-        app.AddSqlServerDatabase();
 
         // Add storage providers.
         app.AddFileStorage();
