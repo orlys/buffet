@@ -53,9 +53,7 @@ public static class HealthCheckExtensions
     /// <returns>A boolean representing whether the given check is configured in this BaGetter instance.</returns>
     public static bool IsConfigured(this HealthCheckRegistration check, BaGetterOptions options)
     {
-        return check.Tags.Count == 0 || // General checks
-               check.Tags.Contains(options.Database.Type) || // Database check
-               check.Tags.Contains(options.Storage.Type) || // Storage check
-               check.Tags.Contains(options.Search.Type); // Search check
+        // Only untagged checks are BaGetter's own; the SQLite database is the only one.
+        return check.Tags.Count == 0;
     }
 }

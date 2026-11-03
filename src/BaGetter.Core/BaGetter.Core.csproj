@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="NuGet.Protocol" />
-    <!-- Lift the vulnerable Pkcs 9.0.x pulled in by NuGet.Packaging and Microsoft.Data.SqlClient. -->
+    <!-- Lift the vulnerable Pkcs 9.0.x pulled in by NuGet.Packaging. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 

@@ -48,7 +48,8 @@ public class BaGetterOptions
     /// The maximum package size in GB.
     /// Attempted uploads of packages larger than this will be rejected with an internal server error carrying one <see cref="System.IO.InvalidDataException"/>.
     /// </summary>
-    public uint MaxPackageSizeGiB { get; set; } = 8;
+    // SQLite storage holds at most ~1 GB per file, so a larger limit only moves the failure later.
+    public uint MaxPackageSizeGiB { get; set; } = 1;
 
     /// <summary>
     /// If this is set to a value, it will limit the number of versions that can be pushed for a package.
@@ -61,10 +62,6 @@ public class BaGetterOptions
     public RetentionOptions Retention { get; set; }
 
     public DatabaseOptions Database { get; set; }
-
-    public StorageOptions Storage { get; set; }
-
-    public SearchOptions Search { get; set; }
 
     public MirrorOptions Mirror { get; set; }
 

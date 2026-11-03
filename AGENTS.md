@@ -5,10 +5,13 @@
 ## 與上游的差異
 
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`，方案檔是 `BaGetter.slnx`。
-- **只支援 SQLite**：`Database:Type` 只接受 `Sqlite`，設成其他值會在啟動驗證時失敗。
-  - `src/BaGetter.Database.{MySql,PostgreSql,SqlServer}` 還留在原處，方便合併上游，但不在方案裡，`BaGetter.csproj` 也沒有參考它們。
-  - AzureTable 資料庫沒有註冊；Azure Blob storage 和 Azure Search 仍然可以用。
-  - 不要把 MySQL 加回來，除非 Pomelo 已經發佈支援 EF Core 10 的版本。`Pomelo.EntityFrameworkCore.MySql` 9.0.0 在 EF Core 10 上一呼叫 `UseMySql` 就會丟 `MissingMethodException`。
+- **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
+  - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由 migration `AddStorageBlobs` 建立。
+  - 備份或搬家時，複製這個 `.db` 檔即可（連同 `-wal`/`-shm`，或先停止服務）。
+  - 已經沒有 `Database:Type`、`Storage:*`、`Search:Type` 這些設定，殘留的值會被忽略。
+  - 單一檔案上限約 1 GB（SQLite 的 `SQLITE_MAX_LENGTH`），所以 `MaxPackageSizeGiB` 預設是 1。
+  - MySQL、PostgreSQL、SqlServer、AzureTable 這些資料庫，以及檔案系統、Aliyun、AWS、Azure、GCP、Tencent 這些儲存體都已刪除，不要加回來。附帶一提，`Pomelo.EntityFrameworkCore.MySql` 9.0.0 在 EF Core 10 上一呼叫 `UseMySql` 就會丟 `MissingMethodException`。
+  - 從舊版（檔案系統儲存）升級時沒有資料遷移：舊的 `packages/`、`symbols/` 資料夾不會被讀取，套件要重新推送。
 - **網頁介面**：已移除 Upload 頁和 Statistics 頁（`/upload`、`/stats` 都回 404），也移除了 Documentation 導覽連結和頁面內的上游文件連結；`<title>` 不帶 BaGetter 字樣；也沒有顯示版本的 footer。
 - **介面樣式**：單色主題（黑白、1.5px 外框、膠囊標籤、粗黑分隔線），色票與字體都在 `src/BaGetter.Web/wwwroot/css/site.css` 的 `:root`，深色模式整組反轉。Bootstrap 3 只拿來用 dropdown，它內建的 `.label` class 會蓋掉自訂樣式，所以區段標題用的是 `.section-label`。
 - `Statistics:ListConfiguredServices` 仍然保留，用來控制 health check 是否列出使用中的服務。
@@ -45,4 +48,4 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
 
 ## 文件
 
-網頁上已經不連到文件。設定方式（API key、`PathBase`、mirror、storage、health check 等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本 repo 的 `docs/docs/`。注意：上游文件提到的 MySQL／PostgreSQL／SqlServer／AzureTable 資料庫，以及 Upload、Statistics 頁，在這個分支都不適用。
+網頁上已經不連到文件。設定方式（API key、`PathBase`、mirror、health check 等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本 repo 的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在這個分支都不適用。

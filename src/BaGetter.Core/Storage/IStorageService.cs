@@ -14,8 +14,7 @@ namespace BaGetter.Core;
 /// <item>Packages, through <see cref="PackageStorageService"/></item>
 /// <item>Symbols, through <see cref="SymbolStorageService"/></item>
 /// </list>
-/// This storage abstraction has implementations for disk,
-/// Azure Blob Storage, Amazon Web Services S3, and Google Cloud Storage.
+/// The only implementation stores files in the SQLite database (SqliteStorageService).
 /// </remarks>
 public interface IStorageService
 {

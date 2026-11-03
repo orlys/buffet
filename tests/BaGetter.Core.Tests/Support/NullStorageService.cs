@@ -15,12 +15,9 @@ public class NullStorageService : IStorageService
     {
     }
 
+    // Like the real storage, deleting a path that was never stored (e.g. a missing readme) is a no-op.
     public Task DeleteAsync(string path, CancellationToken cancellationToken = default)
     {
-        if (!_files.Contains(path))
-        {
-            throw new FileNotFoundException();
-        }
         _files.Remove(path);
         return Task.CompletedTask;
     }

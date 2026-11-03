@@ -76,7 +76,8 @@ Pushing the same id and version twice is rejected with `409 Conflict` unless `Al
 
 * **Cross-platform**: runs on Windows, macOS, and Linux!
 * **ARM** (64bit) **support**. You can host your NuGets on a device like Raspberry Pi!
-* **Cloud native**: supports [Docker][Docker doc link], [AWS][AWS doc link], [Google Cloud][GCP doc link], [Alibaba Cloud][Aliyun doc link]，[Tencent Cloud][Tencent doc link]
+* **One file**: package files, symbols, metadata and search all live in a single SQLite database (`Database:ConnectionString`); back up or move the feed by copying that file. Each file is limited to about 1 GB.
+* **Runs anywhere**: [Docker][Docker doc link] or plain .NET; this build has no cloud storage providers
 * **Offline support**: [Mirror a NuGet server][Read through caching] to speed up builds and enable offline downloads
 
 ## 🤝 Contributing
@@ -119,7 +120,3 @@ Thanks to everyone who helps to make BaGetter better!
 
 [Documentation]: https://www.bagetter.com/
 [Read through caching]: https://www.bagetter.com/docs/configuration#enable-read-through-caching
-[AWS doc link]: https://www.bagetter.com/docs/Installation/aws
-[GCP doc link]: https://www.bagetter.com/docs/Installation/gcp
-[Aliyun doc link]: https://www.bagetter.com/docs/Installation/aliyun
-[Tencent doc link]: https://www.bagetter.com/docs/Installation/tencent

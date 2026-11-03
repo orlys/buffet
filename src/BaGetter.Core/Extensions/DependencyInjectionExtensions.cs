@@ -22,7 +22,6 @@ public static partial class DependencyInjectionExtensions
 
         services.AddConfiguration();
         services.AddBaGetServices();
-        services.AddDefaultProviders();
 
         configureAction(app);
 
@@ -65,11 +64,8 @@ public static partial class DependencyInjectionExtensions
     {
         services.AddBaGetterOptions<BaGetterOptions>();
         services.AddBaGetterOptions<DatabaseOptions>(nameof(BaGetterOptions.Database));
-        services.AddBaGetterOptions<FileSystemStorageOptions>(nameof(BaGetterOptions.Storage));
         services.AddBaGetterOptions<MirrorOptions>(nameof(BaGetterOptions.Mirror));
         services.AddBaGetterOptions<RetentionOptions>(nameof(BaGetterOptions.Retention));
-        services.AddBaGetterOptions<SearchOptions>(nameof(BaGetterOptions.Search));
-        services.AddBaGetterOptions<StorageOptions>(nameof(BaGetterOptions.Storage));
         services.AddBaGetterOptions<StatisticsOptions>(nameof(BaGetterOptions.Statistics));
     }
 
@@ -103,47 +99,13 @@ public static partial class DependencyInjectionExtensions
         services.TryAddTransient<ISymbolStorageService, SymbolStorageService>();
 
         services.TryAddTransient<DatabaseSearchService>();
-        services.TryAddTransient<FileStorageService>();
         services.TryAddTransient<PackageService>();
         services.TryAddTransient<V2UpstreamClient>();
         services.TryAddTransient<V3UpstreamClient>();
         services.TryAddTransient<DisabledUpstreamClient>();
-        services.TryAddSingleton<NullStorageService>();
         services.TryAddTransient<PackageDatabase>();
 
         services.TryAddTransient(UpstreamClientFactory);
-    }
-
-    private static void AddDefaultProviders(this IServiceCollection services)
-    {
-        services.AddProvider((provider, configuration) =>
-        {
-            if (!configuration.HasSearchType("null")) return null;
-
-            return provider.GetRequiredService<NullSearchService>();
-        });
-
-        services.AddProvider((provider, configuration) =>
-        {
-            if (!configuration.HasSearchType("null")) return null;
-
-            return provider.GetRequiredService<NullSearchIndexer>();
-        });
-
-        services.AddProvider<IStorageService>((provider, configuration) =>
-        {
-            if (configuration.HasStorageType("filesystem"))
-            {
-                return provider.GetRequiredService<FileStorageService>();
-            }
-
-            if (configuration.HasStorageType("null"))
-            {
-                return provider.GetRequiredService<NullStorageService>();
-            }
-
-            return null;
-        });
     }
 
     private static void AddFallbackServices(this IServiceCollection services)
