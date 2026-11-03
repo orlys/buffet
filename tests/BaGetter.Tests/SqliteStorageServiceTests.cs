@@ -6,6 +6,7 @@ using BaGetter.Core;
 using BaGetter.Database.Sqlite;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -94,6 +95,38 @@ public class SqliteStorageServiceTests : IDisposable
         await _target.DeleteAsync("never-existed");
 
         Assert.Null(await _target.GetAsync("x"));
+    }
+
+    [Fact]
+    public async Task ImportsAnUpstreamStorageFolderUnderTheSameKeys()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"bagetter-import-{Guid.NewGuid():N}");
+        try
+        {
+            WriteFile(root, "packages/a/1.0.0/a.1.0.0.nupkg", "package");
+            WriteFile(root, "symbols/a.pdb/abc123ffffffff/a.pdb", "symbols");
+            WriteFile(root, "db/bagetter.db", "not storage");
+
+            var importer = new FileStorageImporter(_target, NullLogger<FileStorageImporter>.Instance);
+
+            Assert.Equal(0, await importer.ImportAsync(root, default));
+            Assert.Equal(0, await importer.ImportAsync(root, default)); // re-running is harmless
+
+            Assert.Equal("package", await ReadAsync("packages/a/1.0.0/a.1.0.0.nupkg"));
+            Assert.Equal("symbols", await ReadAsync("symbols/a.pdb/abc123ffffffff/a.pdb"));
+            Assert.Null(await _target.GetAsync("db/bagetter.db"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static void WriteFile(string root, string relativePath, string text)
+    {
+        var path = Path.Combine(root, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        File.WriteAllText(path, text);
     }
 
     private static MemoryStream Content(string text) => new(Encoding.UTF8.GetBytes(text));
