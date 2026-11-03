@@ -10,6 +10,7 @@
   - AzureTable 資料庫沒有註冊；Azure Blob storage 和 Azure Search 仍然可以用。
   - 不要把 MySQL 加回來，除非 Pomelo 已經發佈支援 EF Core 10 的版本。`Pomelo.EntityFrameworkCore.MySql` 9.0.0 在 EF Core 10 上一呼叫 `UseMySql` 就會丟 `MissingMethodException`。
 - **網頁介面**：已移除 Upload 頁和 Statistics 頁（`/upload`、`/stats` 都回 404），也移除了 Documentation 導覽連結和頁面內的上游文件連結；`<title>` 不帶 BaGetter 字樣；也沒有顯示版本的 footer。
+- **介面樣式**：單色主題（黑白、1.5px 外框、膠囊標籤、粗黑分隔線），色票與字體都在 `src/BaGetter.Web/wwwroot/css/site.css` 的 `:root`，深色模式整組反轉。Bootstrap 3 只拿來用 dropdown，它內建的 `.label` class 會蓋掉自訂樣式，所以區段標題用的是 `.section-label`。
 - `Statistics:ListConfiguredServices` 仍然保留，用來控制 health check 是否列出使用中的服務。
 
 ## 建置與測試
