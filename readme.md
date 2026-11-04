@@ -1,122 +1,145 @@
-# BaGetter 🥖🛒
+# BaGetter
 
-BaGetter is a lightweight [NuGet] and [symbol] server, written in C#.
-It's forked from [BaGet] for progressive and community driven development.
+輕量的自架 [NuGet] 與[符號伺服器][symbol]。整個 feed，包括套件、符號檔、metadata 和搜尋，就是一個 SQLite 檔。
 
-<p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/737941/50140219-d8409700-0258-11e9-94c9-dad24d2b48bb.png">
+這是 [bagetter/BaGetter] v1.6.5 的自用分支（`main`），目標是輕量簡單：只剩 SQLite，沒有雲端儲存，也沒有類型設定要選。
+
+![套件列表](screenshots/packages.png)
+
+<p>
+  <img src="screenshots/package.png" width="49%" alt="套件頁">
+  <img src="screenshots/package-dark.png" width="49%" alt="套件頁（深色模式）">
 </p>
 
-![Build status] [![Docker image version]][Docker link] [![Discord][Discord image]][Discord link]
+## 和上游的差異
 
-## 🚀 Getting Started
+- **.NET 10**，方案檔是 `BaGetter.slnx`。
+- **只有一個檔案**：`Database:ConnectionString` 是唯一的儲存設定，`Database:Type`、`Storage:*`、`Search:Type` 都沒有了。MySQL、PostgreSQL、SQL Server，以及檔案系統、Azure、AWS、GCP、Aliyun、Tencent 儲存體都已移除。
+- **單一檔案上限約 1 GB**（SQLite 的 BLOB 上限），所以 `MaxPackageSizeGiB` 預設是 1。
+- **網頁介面**：單色重新設計；拿掉了上傳頁、統計頁和文件連結，標題和頁尾也不顯示 BaGetter 字樣與版本。
+- **`import files` 指令**：把上游的檔案系統儲存搬進 SQLite。
 
-With Docker:
+細節和理由見 [AGENTS.md](AGENTS.md)。
 
-1. `docker run -p 5000:8080 -v ./bagetter-data:/data bagetter/bagetter:latest`
-2. Browse `http://localhost:5000/` in your browser
+## 開始使用
 
-With .NET:
+### .NET
 
-1. Install the [.NET SDK]
-2. Download and extract [BaGetter's latest release]
-3. Start the service with `dotnet BaGetter.dll`
-4. Browse `http://localhost:5000/` in your browser
-
-With IIS ([official microsoft documentation](https://learn.microsoft.com/aspnet/core/host-and-deploy/iis)):
-
-1. Install the [hosting bundle](https://dotnet.microsoft.com/permalink/dotnetcore-current-windows-runtime-bundle-installer)
-2. Download the [zip release](https://github.com/bagetter/BaGetter/releases) of BaGetter
-3. Unpack the zip file contents to a folder of your choice
-4. Create a new or configure an existing IIS site to point its physical path to the folder where you unpacked the zip file
-
-For more information, please refer to the [documentation] at <https://www.bagetter.com/docs>. This build's web UI does not link to it.
-
-## 📤 Uploading packages
-
-This build has no upload page in the web UI; push packages with a NuGet client.
-Use the service index `https://<your-host>/v3/index.json` (append your `PathBase` to the host if you set one).
-If an API key is configured (`ApiKey` or `Authentication:ApiKeys`), pass it with the key option; otherwise any value works.
-
-.NET CLI (also pushes a matching `.snupkg` symbol package next to the `.nupkg`):
+需要 [.NET 10 SDK]。
 
 ```shell
-dotnet nuget push -s https://<your-host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.nupkg
+dotnet run --project src/BaGetter
 ```
 
-NuGet CLI:
+網址會印在主控台。資料庫預設是工作目錄下的 `bagetter.db`。
+
+### Docker
+
+這個分支沒有發佈 image，要自己建：
 
 ```shell
-nuget push -Source https://<your-host>/v3/index.json -ApiKey <API-KEY> MyPackage.1.0.0.nupkg
+docker build -t bagetter .
+docker run -p 5000:8080 -v ./bagetter-data:/data bagetter
 ```
 
-Paket:
+然後打開 `http://localhost:5000/`。資料庫在 volume 裡的 `db/bagetter.db`。
+
+沒有 Docker 也可以用 SDK 直接建 container image（`dotnet publish -t:PublishContainer`），做法見 AGENTS.md 的〈部署〉。
+
+## 設定
+
+設定寫在 `appsettings.json`，也可以用環境變數覆寫（`:` 換成 `__`，例如 `Database__ConnectionString`）。
+
+| 設定 | 預設 | 說明 |
+|---|---|---|
+| `Database:ConnectionString` | `Data Source=bagetter.db` | SQLite 檔的位置，整個 feed 都在裡面 |
+| `ApiKey` | 空白 | 推送和刪除時要帶的 key；空白表示不驗證 |
+| `AllowPackageOverwrites` | `false` | 允許覆蓋同 id、同版本的套件 |
+| `PackageDeletionBehavior` | `Unlist` | `Unlist` 只隱藏，`HardDelete` 直接刪除 |
+| `MaxPackageSizeGiB` | `1` | 上傳大小上限 |
+| `IsReadOnlyMode` | `false` | 拒絕推送、刪除和重新上架 |
+| `PathBase` | 無 | 掛在子路徑下時使用，例如 `/nuget` |
+| `Mirror:Enabled` | `false` | 本地沒有的套件向上游（預設 nuget.org）抓取並存下來 |
+| `Authentication:Credentials` | 無 | Basic 驗證帳密；設定後連讀取 feed 都要帳密 |
+| `Authentication:ApiKeys` | 無 | 多組 API key，和 `ApiKey` 並用 |
+| `Retention:MaxMajorVersions` 等 | 無 | 每個套件保留的版本數 |
+| `HealthCheck:Path` | `/health` | 健康檢查端點 |
+
+其他選項（例如 mirror 的驗證方式）請看上游文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在這個分支都不適用。
+
+## 使用 feed
 
 ```shell
-paket push --url https://<your-host> --api-key <API-KEY> MyPackage.1.0.0.nupkg
+dotnet nuget add source https://<host>/v3/index.json -n bagetter
 ```
 
-If `Authentication:Credentials` is configured, the service index also needs basic auth, so register the source with credentials and push to it by name (add `--store-password-in-clear-text` on Linux/macOS):
+之後 `dotnet restore` 就會到這裡找套件。套件頁上有各種用戶端的安裝指令，頁尾的 service index 網址可以直接複製。
+
+## 上傳套件
+
+網頁上沒有上傳頁，請用 NuGet 用戶端推送。service index 是 `https://<host>/v3/index.json`；如果有設 `PathBase`，要接在 host 後面。有設定 API key（`ApiKey` 或 `Authentication:ApiKeys`）時，要帶相符的 key；沒有設定時帶什麼都可以。
+
+.NET CLI（同一個目錄下如果有對應的 `.snupkg`，會一起推送符號套件）：
 
 ```shell
-dotnet nuget add source https://<your-host>/v3/index.json -n bagetter -u <USER> -p <PASSWORD>
+dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+NuGet CLI：
+
+```shell
+nuget push -Source https://<host>/v3/index.json -ApiKey <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+Paket：
+
+```shell
+paket push --url https://<host> --api-key <API-KEY> MyPackage.1.0.0.nupkg
+```
+
+有設定 `Authentication:Credentials` 時，service index 也要帳密，所以要先帶帳密註冊來源，再用來源名稱推送（Linux/macOS 要加 `--store-password-in-clear-text`）：
+
+```shell
+dotnet nuget add source https://<host>/v3/index.json -n bagetter -u <USER> -p <PASSWORD>
 dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
 ```
 
-Recent NuGet clients refuse to push to a plain `http://` source. Register it with `--allow-insecure-connections` (combine with `-u`/`-p` if needed) and push to it by name:
+新版 NuGet 用戶端拒絕推送到 `http://` 來源。要用 `--allow-insecure-connections` 註冊來源（需要帳密時再加 `-u`/`-p`），再用來源名稱推送：
 
 ```shell
-dotnet nuget add source http://<your-host>/v3/index.json -n bagetter --allow-insecure-connections
+dotnet nuget add source http://<host>/v3/index.json -n bagetter --allow-insecure-connections
 dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
 ```
 
-Pushing the same id and version twice is rejected with `409 Conflict` unless `AllowPackageOverwrites` is enabled.
+回應碼：`201` 表示成功；`409` 表示同 id、同版本已經存在（除非開了 `AllowPackageOverwrites`）；`401` 表示 API key 錯誤或處於唯讀模式；`400` 表示不是有效的套件。
 
-## 📦 Features
+## 從上游 BaGetter 搬過來
 
-* **Cross-platform**: runs on Windows, macOS, and Linux!
-* **ARM** (64bit) **support**. You can host your NuGets on a device like Raspberry Pi!
-* **One file**: package files, symbols, metadata and search all live in a single SQLite database (`Database:ConnectionString`); back up or move the feed by copying that file. Each file is limited to about 1 GB.
-* **Runs anywhere**: [Docker][Docker doc link] or plain .NET; this build has no cloud storage providers
-* **Offline support**: [Mirror a NuGet server][Read through caching] to speed up builds and enable offline downloads
+上游預設把檔案放在 `Storage:Path` 底下的 `packages/`、`symbols/` 資料夾。前提是舊的資料庫本來就是 SQLite。把連線字串指向舊資料庫，再對那個資料夾執行一次：
 
-## 🤝 Contributing
+```shell
+Database__ConnectionString="Data Source=/data/db/bagetter.db" dotnet BaGetter.dll import files /data
+```
 
-We welcome contributions! Check out the [Contributing Guide](CONTRIBUTING.md) to get started.
+指令會先套用 migration，再把資料夾裡的檔案用相同的路徑存進資料庫，重跑也沒關係。同名但內容不同的檔案會算成衝突，此時 exit code 是 1。舊資料夾不會被刪除，確認新版沒問題之後再自己清掉。
 
-## 📄 License
+## 備份
 
-This project is licensed under the [MIT License](LICENSE).
+最簡單的做法是先停止服務，再把 `bagetter.db` 複製走；如果旁邊還有 `bagetter.db-wal`、`bagetter.db-shm`，也要一起複製。不想停機的話，用 `sqlite3 bagetter.db ".backup 'backup.db'"`。
 
-## 📞 Contact
+## 建置與測試
 
-If you have questions, feel free to open an [issue] or join our [Discord Server][Discord link] for discussions.
+```shell
+dotnet build BaGetter.slnx
+dotnet test BaGetter.slnx
+```
 
-## 🤝🏼 Contributors
+## 授權
 
-Thanks to everyone who helps to make BaGetter better!
-
-<a href="https://github.com/bagetter/BaGetter/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=bagetter/BaGetter" />
-</a>
-
-
-[Build status]: https://img.shields.io/github/actions/workflow/status/bagetter/BaGetter/.github/workflows/main.yml?logo=github&logoColor=fff
-
-[Docker image version]: https://img.shields.io/docker/v/bagetter/bagetter?logo=docker&logoColor=fff&label=version
-[Docker link]: https://hub.docker.com/r/bagetter/bagetter
-[Docker doc link]: https://www.bagetter.com/docs/Installation/docker
-
-[Discord image]: https://img.shields.io/discord/1181167608427450388?logo=discord&logoColor=fff
-[Discord link]: https://discord.gg/XsAmm6f2hZ
+[MIT](LICENSE)。原始專案是 [BaGet]，之後由 [bagetter/BaGetter] 社群接手維護；這個分支的修改一樣採用 MIT 授權。
 
 [NuGet]: https://learn.microsoft.com/nuget/what-is-nuget
-[symbol]: https://docs.microsoft.com/en-us/windows/desktop/debug/symbol-servers-and-symbol-stores
-[.NET SDK]: https://www.microsoft.com/net/download
-[Issue]: https://github.com/bagetter/BaGetter/issues
+[symbol]: https://learn.microsoft.com/windows/win32/debug/symbol-servers-and-symbol-stores
+[.NET 10 SDK]: https://dotnet.microsoft.com/download/dotnet/10.0
+[bagetter/BaGetter]: https://github.com/bagetter/BaGetter
 [BaGet]: https://github.com/loic-sharma/BaGet
-
-[BaGetter's latest release]: https://github.com/bagetter/BaGetter/releases
-
-[Documentation]: https://www.bagetter.com/
-[Read through caching]: https://www.bagetter.com/docs/configuration#enable-read-through-caching
