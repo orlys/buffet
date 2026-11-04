@@ -1,6 +1,6 @@
 # AGENTS.md
 
-這是 Buffet，自用的 NuGet 伺服器，repo 在 <https://github.com/orlys/buffet>，分支 `main`。它從上游 [bagetter/BaGetter](https://github.com/bagetter/BaGetter) 的 `v1.6.5` 分出來，之後改名為 Buffet。
+這是 Buffet，自用的 NuGet 伺服器，存放庫在 <https://github.com/orlys/buffet>，分支 `main`。它從上游 [bagetter/BaGetter](https://github.com/bagetter/BaGetter) 的 `v1.6.5` 分出來，之後改名為 Buffet。
 
 ## 與上游的差異
 
@@ -10,7 +10,7 @@
   - `docs/`（上游文件網站）、`deployment templates/`、`.github/`、`CODE_OF_CONDUCT.md`、`CONTRIBUTING.md` 是上游留下來的檔案，沒有改名，內容講的是上游。
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`。
 - **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
-  - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由 migration `AddStorageBlobs` 建立。
+  - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由移轉 `AddStorageBlobs` 建立。
   - 備份或搬家時，先停止服務再複製這個 `.db` 檔（還有 `-wal`/`-shm` 就一起複製）；不停機就用 `sqlite3 buffet.db ".backup 'backup.db'"`。
   - 已經沒有 `Database:Type`、`Storage:*`、`Search:Type` 這些設定，殘留的值會被忽略。
   - 單一檔案上限約 1 GB（SQLite 的 `SQLITE_MAX_LENGTH`），所以 `MaxPackageSizeGiB` 預設是 1。
@@ -54,4 +54,4 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
 
 ## 文件
 
-網頁上已經不連到文件。設定方式（API key、`PathBase`、mirror、health check 等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本 repo 的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
+網頁上已經不連到文件。設定方式（API key、`PathBase`、鏡像、健康檢查等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本存放庫的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
