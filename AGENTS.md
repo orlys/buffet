@@ -7,14 +7,15 @@
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`，方案檔是 `BaGetter.slnx`。
 - **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
   - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由 migration `AddStorageBlobs` 建立。
-  - 備份或搬家時，複製這個 `.db` 檔即可（連同 `-wal`/`-shm`，或先停止服務）。
+  - 備份或搬家時，先停止服務再複製這個 `.db` 檔（還有 `-wal`/`-shm` 就一起複製）；不停機就用 `sqlite3 bagetter.db ".backup 'backup.db'"`。
   - 已經沒有 `Database:Type`、`Storage:*`、`Search:Type` 這些設定，殘留的值會被忽略。
   - 單一檔案上限約 1 GB（SQLite 的 `SQLITE_MAX_LENGTH`），所以 `MaxPackageSizeGiB` 預設是 1。
   - MySQL、PostgreSQL、SqlServer、AzureTable 這些資料庫，以及檔案系統、Aliyun、AWS、Azure、GCP、Tencent 這些儲存體都已刪除，不要加回來。附帶一提，`Pomelo.EntityFrameworkCore.MySql` 9.0.0 在 EF Core 10 上一呼叫 `UseMySql` 就會丟 `MissingMethodException`。
-  - 從舊版（檔案系統儲存）升級時沒有資料遷移：舊的 `packages/`、`symbols/` 資料夾不會被讀取，套件要重新推送。
+  - 從舊版（檔案系統儲存）升級時，服務本身不會讀舊的 `packages/`、`symbols/` 資料夾，要先執行一次 `import files <資料夾>`（`FileStorageImporter`）把檔案搬進資料庫。
 - **網頁介面**：已移除 Upload 頁和 Statistics 頁（`/upload`、`/stats` 都回 404），也移除了 Documentation 導覽連結和頁面內的上游文件連結；`<title>` 不帶 BaGetter 字樣；也沒有顯示版本的 footer。
 - **介面樣式**：單色主題（黑白、1.5px 外框、膠囊標籤、粗黑分隔線），色票與字體都在 `src/BaGetter.Web/wwwroot/css/site.css` 的 `:root`，深色模式整組反轉。Bootstrap 3 只拿來用 dropdown，它內建的 `.label` class 會蓋掉自訂樣式，所以區段標題用的是 `.section-label`。
 - `Statistics:ListConfiguredServices` 仍然保留，用來控制 health check 是否列出使用中的服務。
+- `screenshots/` 是 README 用的截圖：本機用 nuget.org 的公開套件起一個 Development 站台，再用 Chrome headless 擷取（寬 1280，`--host-resolver-rules="MAP nuget.example.com 127.0.0.1:<port>"` 讓右上角顯示 `nuget.example.com`，深色版加 `--blink-settings=preferredColorScheme=0`）。
 
 ## 建置與測試
 
@@ -41,7 +42,7 @@ DOTNET_CONTAINER_INSECURE_REGISTRIES=localhost:5000 dotnet publish src/BaGetter/
 節點用 `localhost:32000/bagetter:<版本>` 拉 image。改 manifest 的 image 之後 `kubectl apply`；Deployment 是 Recreate，切換約 20 秒。
 
 - `ContainerUser=root`：hostPath 裡的檔案屬於 root，SDK 預設的非 root `app` 使用者寫不了資料庫。
-- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。下載會一邊串流 blob 一邊持有讀取鎖，在 rollback journal 模式下，並行 restore 時寫入下載次數會失敗，錯誤是 `database is locked`。所以備份時要連同 `-wal`/`-shm` 一起，或先把 Deployment 縮到 0。
+- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。下載會一邊串流 blob 一邊持有讀取鎖，在 rollback journal 模式下，並行 restore 時寫入下載次數會失敗，錯誤是 `database is locked`。所以複製資料庫前要先把 Deployment 縮到 0（image 裡沒有 `sqlite3` 可以線上備份）。
 - 從上游 BaGetter（檔案系統儲存）搬過來時，只需要做一次 `dotnet /app/BaGetter.dll import files /data`。2026-11-04 已經做過：914 個檔案全部匯入，330 個 nupkg 下載回來比對 SHA-256 全部相同。
 
 ## 上傳套件
@@ -63,7 +64,7 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
   dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
   ```
 
-其他用戶端（NuGet CLI、Paket）的寫法見 `readme.md` 的〈Uploading packages〉一節。
+其他用戶端（NuGet CLI、Paket）的寫法見 `readme.md` 的〈上傳套件〉一節。
 
 ## 文件
 
