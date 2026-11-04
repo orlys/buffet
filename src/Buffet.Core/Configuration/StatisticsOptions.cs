@@ -1,0 +1,14 @@
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace Buffet.Core;
+
+public class StatisticsOptions : IValidatableObject
+{
+    public bool ListConfiguredServices { get; set; } = false;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        yield return ValidationResult.Success;
+    }
+}

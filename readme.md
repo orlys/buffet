@@ -1,8 +1,8 @@
-# BaGetter（orika 分支）
+# Buffet
 
 輕量的自架 [NuGet] 與[符號伺服器][symbol]。整個 feed，包括套件、符號檔、metadata 和搜尋，就是一個 SQLite 檔。
 
-這是 [bagetter/BaGetter] v1.6.5 的自用分支（`orika/customizations`），目標是輕量簡單：只剩 SQLite，沒有雲端儲存，也沒有類型設定要選。
+Buffet 從 [bagetter/BaGetter] v1.6.5 分出來，目標是輕量簡單：只剩 SQLite，沒有雲端儲存，也沒有類型設定要選。
 
 ![套件列表](screenshots/packages.png)
 
@@ -13,10 +13,10 @@
 
 ## 和上游的差異
 
-- **.NET 10**，方案檔是 `BaGetter.slnx`。
+- **.NET 10**，方案檔是 `Buffet.slnx`。
 - **只有一個檔案**：`Database:ConnectionString` 是唯一的儲存設定，`Database:Type`、`Storage:*`、`Search:Type` 都沒有了。MySQL、PostgreSQL、SQL Server，以及檔案系統、Azure、AWS、GCP、Aliyun、Tencent 儲存體都已移除。
 - **單一檔案上限約 1 GB**（SQLite 的 BLOB 上限），所以 `MaxPackageSizeGiB` 預設是 1。
-- **網頁介面**：單色重新設計；拿掉了上傳頁、統計頁和文件連結，標題和頁尾也不顯示 BaGetter 字樣與版本。
+- **網頁介面**：黑白兩色重新設計；拿掉了上傳頁、統計頁和文件連結，標題和頁尾也不顯示產品名稱與版本。
 - **`import files` 指令**：把上游的檔案系統儲存搬進 SQLite。
 
 細節和理由見 [AGENTS.md](AGENTS.md)。
@@ -28,21 +28,21 @@
 需要 [.NET 10 SDK]。
 
 ```shell
-dotnet run --project src/BaGetter
+dotnet run --project src/Buffet
 ```
 
-網址會印在主控台。資料庫預設是工作目錄下的 `bagetter.db`。
+網址會印在主控台。資料庫預設是工作目錄下的 `buffet.db`。
 
 ### Docker
 
-這個分支沒有發佈 image，要自己建：
+Buffet 沒有發佈 image，要自己建：
 
 ```shell
-docker build -t bagetter .
-docker run -p 5000:8080 -v ./bagetter-data:/data bagetter
+docker build -t buffet .
+docker run -p 5000:8080 -v ./buffet-data:/data buffet
 ```
 
-然後打開 `http://localhost:5000/`。資料庫在 volume 裡的 `db/bagetter.db`。
+然後打開 `http://localhost:5000/`。資料庫在 volume 裡的 `db/buffet.db`。
 
 沒有 Docker 也可以用 SDK 直接建 container image（`dotnet publish -t:PublishContainer`），做法見 AGENTS.md 的〈部署〉。
 
@@ -52,7 +52,7 @@ docker run -p 5000:8080 -v ./bagetter-data:/data bagetter
 
 | 設定 | 預設 | 說明 |
 |---|---|---|
-| `Database:ConnectionString` | `Data Source=bagetter.db` | SQLite 檔的位置，整個 feed 都在裡面 |
+| `Database:ConnectionString` | `Data Source=buffet.db` | SQLite 檔的位置，整個 feed 都在裡面 |
 | `ApiKey` | 空白 | 推送和刪除時要帶的 key；空白表示不驗證 |
 | `AllowPackageOverwrites` | `false` | 允許覆蓋同 id、同版本的套件 |
 | `PackageDeletionBehavior` | `Unlist` | `Unlist` 只隱藏，`HardDelete` 直接刪除 |
@@ -65,12 +65,12 @@ docker run -p 5000:8080 -v ./bagetter-data:/data bagetter
 | `Retention:MaxMajorVersions` 等 | 無 | 每個套件保留的版本數 |
 | `HealthCheck:Path` | `/health` | 健康檢查端點 |
 
-其他選項（例如 mirror 的驗證方式）請看上游文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在這個分支都不適用。
+其他選項（例如 mirror 的驗證方式）請看上游 BaGetter 的文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在 Buffet 都不適用。
 
 ## 使用 feed
 
 ```shell
-dotnet nuget add source https://<host>/v3/index.json -n bagetter
+dotnet nuget add source https://<host>/v3/index.json -n buffet
 ```
 
 之後 `dotnet restore` 就會到這裡找套件。套件頁上有各種用戶端的安裝指令，頁尾的 service index 網址可以直接複製。
@@ -100,15 +100,15 @@ paket push --url https://<host> --api-key <API-KEY> MyPackage.1.0.0.nupkg
 有設定 `Authentication:Credentials` 時，service index 也要帳密，所以要先帶帳密註冊來源，再用來源名稱推送（Linux/macOS 要加 `--store-password-in-clear-text`）：
 
 ```shell
-dotnet nuget add source https://<host>/v3/index.json -n bagetter -u <USER> -p <PASSWORD>
-dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
+dotnet nuget add source https://<host>/v3/index.json -n buffet -u <USER> -p <PASSWORD>
+dotnet nuget push -s buffet -k <API-KEY> MyPackage.1.0.0.nupkg
 ```
 
 新版 NuGet 用戶端拒絕推送到 `http://` 來源。要用 `--allow-insecure-connections` 註冊來源（需要帳密時再加 `-u`/`-p`），再用來源名稱推送：
 
 ```shell
-dotnet nuget add source http://<host>/v3/index.json -n bagetter --allow-insecure-connections
-dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
+dotnet nuget add source http://<host>/v3/index.json -n buffet --allow-insecure-connections
+dotnet nuget push -s buffet -k <API-KEY> MyPackage.1.0.0.nupkg
 ```
 
 回應碼：`201` 表示成功；`409` 表示同 id、同版本已經存在（除非開了 `AllowPackageOverwrites`）；`401` 表示 API key 錯誤或處於唯讀模式；`400` 表示不是有效的套件。
@@ -118,25 +118,25 @@ dotnet nuget push -s bagetter -k <API-KEY> MyPackage.1.0.0.nupkg
 上游預設把檔案放在 `Storage:Path` 底下的 `packages/`、`symbols/` 資料夾。前提是舊的資料庫本來就是 SQLite。把連線字串指向舊資料庫，再對那個資料夾執行一次：
 
 ```shell
-Database__ConnectionString="Data Source=/data/db/bagetter.db" dotnet BaGetter.dll import files /data
+Database__ConnectionString="Data Source=/data/db/bagetter.db" dotnet Buffet.dll import files /data
 ```
 
-指令會先套用 migration，再把資料夾裡的檔案用相同的路徑存進資料庫，重跑也沒關係。同名但內容不同的檔案會算成衝突，此時 exit code 是 1。舊資料夾不會被刪除，確認新版沒問題之後再自己清掉。
+指令會先套用 migration，再把資料夾裡的檔案用相同的路徑存進資料庫，重跑也沒關係。同名但內容不同的檔案會算成衝突，此時 exit code 是 1。舊資料夾不會被刪除，確認 Buffet 沒問題之後再自己清掉。
 
 ## 備份
 
-最簡單的做法是先停止服務，再把 `bagetter.db` 複製走；如果旁邊還有 `bagetter.db-wal`、`bagetter.db-shm`，也要一起複製。不想停機的話，用 `sqlite3 bagetter.db ".backup 'backup.db'"`。
+最簡單的做法是先停止服務，再把 `buffet.db` 複製走；如果旁邊還有 `buffet.db-wal`、`buffet.db-shm`，也要一起複製。不想停機的話，用 `sqlite3 buffet.db ".backup 'backup.db'"`。
 
 ## 建置與測試
 
 ```shell
-dotnet build BaGetter.slnx
-dotnet test BaGetter.slnx
+dotnet build Buffet.slnx
+dotnet test Buffet.slnx
 ```
 
 ## 授權
 
-[MIT](LICENSE)。原始專案是 [BaGet]，之後由 [bagetter/BaGetter] 社群接手維護；這個分支的修改一樣採用 MIT 授權。
+[MIT](LICENSE)。原始專案是 Loic Sharma 的 [BaGet]，之後由 [bagetter/BaGetter] 社群接手維護；Buffet 的修改一樣採用 MIT 授權，`LICENSE` 保留了兩者的版權聲明。
 
 [NuGet]: https://learn.microsoft.com/nuget/what-is-nuget
 [symbol]: https://learn.microsoft.com/windows/win32/debug/symbol-servers-and-symbol-stores
