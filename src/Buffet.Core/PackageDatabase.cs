@@ -99,7 +99,11 @@ public class PackageDatabase : IPackageDatabase
 
     public async Task AddDownloadAsync(string id, NuGetVersion version, CancellationToken cancellationToken)
     {
-        await TryUpdatePackageAsync(id, version, p => p.Downloads += 1, cancellationToken);
+        // Increment in SQL: reading the row and saving it back loses counts when downloads run concurrently.
+        await _context.Packages
+            .Where(p => p.Id == id)
+            .Where(p => p.NormalizedVersionString == version.ToNormalizedString())
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Downloads, p => p.Downloads + 1), cancellationToken);
     }
 
     public async Task<bool> HardDeletePackageAsync(string id, NuGetVersion version, CancellationToken cancellationToken)

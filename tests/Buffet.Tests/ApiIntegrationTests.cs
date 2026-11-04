@@ -1,8 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+using Buffet.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -204,6 +208,25 @@ public class ApiIntegrationTests : IDisposable
         using var response = await _client.GetAsync("v3/package/TestData/1.2.3/TestData.1.2.3.nupkg");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ConcurrentDownloadsAreAllCounted()
+    {
+        await _app.AddPackageAsync(_packageStream);
+
+        const int downloads = 32;
+        await Task.WhenAll(Enumerable.Range(0, downloads).Select(async _ =>
+        {
+            using var response = await _client.GetAsync("v3/package/TestData/1.2.3/TestData.1.2.3.nupkg");
+            response.EnsureSuccessStatusCode();
+        }));
+
+        using var scope = _app.Services.CreateScope();
+        var packages = await scope.ServiceProvider.GetRequiredService<IPackageDatabase>()
+            .FindAsync("TestData", includeUnlisted: true, CancellationToken.None);
+
+        Assert.Equal(downloads, Assert.Single(packages).Downloads);
     }
 
     [Fact]
