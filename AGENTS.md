@@ -1,6 +1,6 @@
 # AGENTS.md
 
-這是 Buffet，自用的 NuGet 伺服器，repo 在 <https://github.com/orlys/buffet>，分支 `orika/customizations`。它從上游 [bagetter/BaGetter](https://github.com/bagetter/BaGetter) 的 `v1.6.5` 分出來，之後改名為 Buffet。
+這是 Buffet，自用的 NuGet 伺服器，存放庫在 <https://github.com/orlys/buffet>，分支 `main`。它從上游 [bagetter/BaGetter](https://github.com/bagetter/BaGetter) 的 `v1.6.5` 分出來，之後改名為 Buffet。
 
 ## 與上游的差異
 
@@ -10,7 +10,7 @@
   - `docs/`（上游文件網站）、`deployment templates/`、`.github/`、`CODE_OF_CONDUCT.md`、`CONTRIBUTING.md` 是上游留下來的檔案，沒有改名，內容講的是上游。
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`。
 - **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
-  - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由 migration `AddStorageBlobs` 建立。
+  - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由移轉 `AddStorageBlobs` 建立。
   - 備份或搬家時，先停止服務再複製這個 `.db` 檔（還有 `-wal`/`-shm` 就一起複製）；不停機就用 `sqlite3 buffet.db ".backup 'backup.db'"`。
   - 已經沒有 `Database:Type`、`Storage:*`、`Search:Type` 這些設定，殘留的值會被忽略。
   - 單一檔案上限約 1 GB（SQLite 的 `SQLITE_MAX_LENGTH`），所以 `MaxPackageSizeGiB` 預設是 1。
@@ -33,9 +33,9 @@ dotnet test Buffet.slnx
 
 ## 部署（nuget.orika.net）
 
-跑在 homelab 的 K8s：namespace `nuget`，manifest 是 homelab repo 的 `k8s/nuget/bagetter.yaml`；資料是 ms-worker-02 上 hostPath `/data/nuget` 裡的 `db/bagetter.db`。叢集裡的資源名稱、資料庫檔名，以及目前跑的 image `localhost:32000/bagetter:1.6.5-orika.2` 都是改名前的，還叫 bagetter。資料庫路徑是 manifest 明確指定的，所以預設檔名改成 `buffet.db` 不影響它。
+跑在 homelab 的 K8s：namespace `nuget`，manifest 是 homelab 存放庫的 `k8s/nuget/bagetter.yaml`；資料是 ms-worker-02 上 hostPath `/data/nuget` 裡的 `db/bagetter.db`。叢集裡的資源名稱、資料庫檔名，以及目前跑的容器映像 `localhost:32000/bagetter:1.6.5-orika.2` 都是改名前的，還叫 bagetter。資料庫路徑是 manifest 明確指定的，所以預設檔名改成 `buffet.db` 不影響它。
 
-建 image 不需要 Docker，用 SDK 直接推到 microk8s 的 registry：
+建容器映像不需要 Docker，用 SDK 直接推到 microk8s 的 registry：
 
 ```shell
 kubectl -n container-registry port-forward svc/registry 5000:5000   # 另開一個終端
@@ -44,11 +44,11 @@ DOTNET_CONTAINER_INSECURE_REGISTRIES=localhost:5000 dotnet publish src/Buffet/Bu
   "-p:ContainerImageTags=\"<版本>;<commit>\"" -p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:10.0 -p:ContainerUser=root
 ```
 
-節點用 `localhost:32000/buffet:<版本>` 拉 image。改 manifest 的 image 之後 `kubectl apply`；Deployment 是 Recreate，切換約 20 秒。
+節點用 `localhost:32000/buffet:<版本>` 拉容器映像。改 manifest 的 image 之後 `kubectl apply`；Deployment 是 Recreate，切換約 20 秒。
 
 - `ContainerUser=root`：hostPath 裡的檔案屬於 root，SDK 預設的非 root `app` 使用者寫不了資料庫。
-- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。下載會一邊串流 blob 一邊持有讀取鎖，在 rollback journal 模式下，並行 restore 時寫入下載次數會失敗，錯誤是 `database is locked`。所以複製資料庫前要先把 Deployment 縮到 0（image 裡沒有 `sqlite3` 可以線上備份）。
-- 從上游 BaGetter（檔案系統儲存）搬過來時，只需要做一次 `dotnet /app/Buffet.dll import files /data`。2026-11-04 已經用改名前的 image 做過：914 個檔案全部匯入，330 個 nupkg 下載回來比對 SHA-256 全部相同。
+- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。下載會一邊串流 blob 一邊持有讀取鎖，在 rollback journal 模式下，並行 restore 時寫入下載次數會失敗，錯誤是 `database is locked`。所以複製資料庫前要先把 Deployment 縮到 0（容器映像裡沒有 `sqlite3` 可以線上備份）。
+- 從上游 BaGetter（檔案系統儲存）搬過來時，只需要做一次 `dotnet /app/Buffet.dll import files /data`。2026-11-04 已經用改名前的容器映像做過：914 個檔案全部匯入，330 個 nupkg 下載回來比對 SHA-256 全部相同。
 
 ## 上傳套件
 
@@ -73,4 +73,4 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
 
 ## 文件
 
-網頁上已經不連到文件。設定方式（API key、`PathBase`、mirror、health check 等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本 repo 的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
+網頁上已經不連到文件。設定方式（API key、`PathBase`、鏡像、健康檢查等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本存放庫的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。

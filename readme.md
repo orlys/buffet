@@ -35,7 +35,7 @@ dotnet run --project src/Buffet
 
 ### Docker
 
-Buffet 沒有發佈 image，要自己建：
+Buffet 沒有發佈容器映像，要自己建：
 
 ```shell
 docker build -t buffet .
@@ -44,7 +44,7 @@ docker run -p 5000:8080 -v ./buffet-data:/data buffet
 
 然後打開 `http://localhost:5000/`。資料庫在 volume 裡的 `db/buffet.db`。
 
-沒有 Docker 也可以用 SDK 直接建 container image（`dotnet publish -t:PublishContainer`），做法見 AGENTS.md 的〈部署〉。
+沒有 Docker 也可以用 SDK 直接建容器映像（`dotnet publish -t:PublishContainer`），做法見 AGENTS.md 的〈部署〉。
 
 ## 設定
 
@@ -55,9 +55,9 @@ docker run -p 5000:8080 -v ./buffet-data:/data buffet
 | `Database:ConnectionString` | `Data Source=buffet.db` | SQLite 檔的位置，整個 feed 都在裡面 |
 | `ApiKey` | 空白 | 推送和刪除時要帶的 key；空白表示不驗證 |
 | `AllowPackageOverwrites` | `false` | 允許覆蓋同 id、同版本的套件 |
-| `PackageDeletionBehavior` | `Unlist` | `Unlist` 只隱藏，`HardDelete` 直接刪除 |
+| `PackageDeletionBehavior` | `Unlist` | `Unlist` 取消列出（搜尋不到，但仍可下載），`HardDelete` 直接刪除 |
 | `MaxPackageSizeGiB` | `1` | 上傳大小上限 |
-| `IsReadOnlyMode` | `false` | 拒絕推送、刪除和重新上架 |
+| `IsReadOnlyMode` | `false` | 拒絕推送、刪除和重新列出 |
 | `PathBase` | 無 | 掛在子路徑下時使用，例如 `/nuget` |
 | `Mirror:Enabled` | `false` | 本地沒有的套件向上游（預設 nuget.org）抓取並存下來 |
 | `Authentication:Credentials` | 無 | Basic 驗證帳密；設定後連讀取 feed 都要帳密 |
@@ -65,7 +65,7 @@ docker run -p 5000:8080 -v ./buffet-data:/data buffet
 | `Retention:MaxMajorVersions` 等 | 無 | 每個套件保留的版本數 |
 | `HealthCheck:Path` | `/health` | 健康檢查端點 |
 
-其他選項（例如 mirror 的驗證方式）請看上游 BaGetter 的文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在 Buffet 都不適用。
+其他選項（例如鏡像的驗證方式）請看上游 BaGetter 的文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在 Buffet 都不適用。
 
 ## 使用 feed
 
@@ -115,13 +115,13 @@ dotnet nuget push -s buffet -k <API-KEY> MyPackage.1.0.0.nupkg
 
 ## 從上游 BaGetter 搬過來
 
-上游預設把檔案放在 `Storage:Path` 底下的 `packages/`、`symbols/` 資料夾。前提是舊的資料庫本來就是 SQLite。把連線字串指向舊資料庫，再對那個資料夾執行一次：
+上游預設把檔案放在 `Storage:Path` 底下的 `packages/`、`symbols/` 資料夾。前提是舊的資料庫本來就是 SQLite。把連接字串指向舊資料庫，再對那個資料夾執行一次：
 
 ```shell
 Database__ConnectionString="Data Source=/data/db/bagetter.db" dotnet Buffet.dll import files /data
 ```
 
-指令會先套用 migration，再把資料夾裡的檔案用相同的路徑存進資料庫，重跑也沒關係。同名但內容不同的檔案會算成衝突，此時 exit code 是 1。舊資料夾不會被刪除，確認 Buffet 沒問題之後再自己清掉。
+指令會先套用資料庫移轉，再把資料夾裡的檔案用相同的路徑存進資料庫，重跑也沒關係。同名但內容不同的檔案會算成衝突，此時 exit code 是 1。舊資料夾不會被刪除，確認 Buffet 沒問題之後再自己清掉。
 
 ## 備份
 
