@@ -1,24 +1,24 @@
-# BaGetter Source Code
+# Buffet Source Code
 
-These folders contain the core components of BaGetter:
+These folders contain the core components of Buffet:
 
-* `BaGetter` - The app's entry point that glues everything together.
-* `BaGetter.Core` - BaGetter's core logic and services.
-* `BaGetter.Web` - The [NuGet server APIs](https://docs.microsoft.com/en-us/nuget/api/overview) and web UI.
-* `BaGetter.Protocol` - Libraries to interact with [NuGet servers' APIs](https://docs.microsoft.com/en-us/nuget/api/overview).
+* `Buffet` - The app's entry point that glues everything together.
+* `Buffet.Core` - Buffet's core logic and services.
+* `Buffet.Web` - The [NuGet server APIs](https://docs.microsoft.com/en-us/nuget/api/overview) and web UI.
+* `Buffet.Protocol` - Libraries to interact with [NuGet servers' APIs](https://docs.microsoft.com/en-us/nuget/api/overview).
 
-These folders contain database-specific components of BaGetter:
+These folders contain database-specific components of Buffet:
 
-* `BaGetter.Database.MySql` - BaGetter's MySQL database provider.
-* `BaGetter.Database.PostgreSql` - BaGetter's PostgreSql database provider.
-* `BaGetter.Database.Sqlite` - BaGetter's SQLite database provider.
-* `BaGetter.Database.SqlServer` - BaGetter's Microsoft SQL Server database provider.
+* `Buffet.Database.MySql` - Buffet's MySQL database provider.
+* `Buffet.Database.PostgreSql` - Buffet's PostgreSql database provider.
+* `Buffet.Database.Sqlite` - Buffet's SQLite database provider.
+* `Buffet.Database.SqlServer` - Buffet's Microsoft SQL Server database provider.
 
-These folders contain cloud-specific components of BaGetter:
+These folders contain cloud-specific components of Buffet:
 
-* `BaGetter.Aliyun` - BaGetter's Alibaba Cloud(Aliyun) provider.
-* `BaGetter.Aws` - BaGetter's Amazon Web Services provider.
-* `BaGetter.Azure` - BaGetter's Azure provider.
-* `BaGetter.Gcp` - BaGetter's Google Cloud Platform provider.
-* `BaGetter.Tencent` - BaGetter's Tencent Cloud Platform provider.
+* `Buffet.Aliyun` - Buffet's Alibaba Cloud(Aliyun) provider.
+* `Buffet.Aws` - Buffet's Amazon Web Services provider.
+* `Buffet.Azure` - Buffet's Azure provider.
+* `Buffet.Gcp` - Buffet's Google Cloud Platform provider.
+* `Buffet.Tencent` - Buffet's Tencent Cloud Platform provider.
 

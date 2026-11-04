@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/BaGet/bin/Debug/netcoreapp3.1/BaGetter.dll",
+            "program": "${workspaceFolder}/src/Buffet/bin/Debug/netcoreapp3.1/Buffet.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/BaGet",
+            "cwd": "${workspaceFolder}/src/Buffet",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart",
             "launchBrowser": {

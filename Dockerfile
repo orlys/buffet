@@ -13,14 +13,14 @@ RUN for file in $(ls *.csproj); do mkdir -p ${file%.*}/ && mv $file ${file%.*}/;
 # useful for debugging to display all files
 #RUN echo $(ls)
 # restore packages
-RUN dotnet restore BaGetter/BaGetter.csproj --arch $TARGETARCH
+RUN dotnet restore Buffet/Buffet.csproj --arch $TARGETARCH
 
 ## Publish app (implicitly builds the app)
 FROM build AS publish
 ARG Version
 # copy all files
 COPY /src .
-RUN dotnet publish BaGetter \
+RUN dotnet publish Buffet \
     --configuration Release \
     --output /app \
     --no-restore \
@@ -41,12 +41,12 @@ RUN apk add --no-cache icu-libs icu-data-full tzdata
 # disable the invariant mode (set in base image)
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 # packages, symbols and metadata all live in this one SQLite file; mount `/data` to keep it
-ENV Database__ConnectionString "Data Source=/data/db/bagetter.db"
-LABEL org.opencontainers.image.source="https://github.com/bagetter/BaGetter"
+ENV Database__ConnectionString "Data Source=/data/db/buffet.db"
+LABEL org.opencontainers.image.source="https://github.com/orlys/buffet"
 # copy default folders
 COPY --from=publish /data /data
 # copy the published app
 WORKDIR /app
 COPY --from=publish /app .
 
-ENTRYPOINT ["dotnet", "BaGetter.dll"]
+ENTRYPOINT ["dotnet", "Buffet.dll"]
