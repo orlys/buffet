@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!-- Same mark as favicon.ico; drawn white on dark browser chrome so it stays visible. -->
+  <style>* { fill: #000; } @media (prefers-color-scheme: dark) { * { fill: #fff; } }</style>
+  <circle cx="4" cy="4.5" r="3.8"/>
+  <path fill-rule="evenodd" d="M23 9h12a13 13 0 0 1 13 13v12a13 13 0 0 1-13 13H23a13 13 0 0 1-13-13V22A13 13 0 0 1 23 9ZM13.5 19.5a5 5 0 1 0 10 0a5 5 0 1 0-10 0ZM27.5 35a8 8 0 1 0 16 0a8 8 0 1 0-16 0Z"/>
+</svg>
