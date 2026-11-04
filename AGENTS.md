@@ -18,6 +18,7 @@
   - 從上游（檔案系統儲存）搬過來時，服務本身不會讀舊的 `packages/`、`symbols/` 資料夾，要先執行一次 `import files <資料夾>`（`FileStorageImporter`）把檔案搬進資料庫。
 - **網頁介面**：已移除 Upload 頁和 Statistics 頁（`/upload`、`/stats` 都回 404），也移除了 Documentation 導覽連結和頁面內的上游文件連結；`<title>` 不帶產品名稱；也沒有顯示版本的 footer。
 - **介面樣式**：單色主題（黑白、1.5px 外框、膠囊標籤、粗黑分隔線），色票與字體都在 `src/Buffet.Web/wwwroot/css/site.css` 的 `:root`，深色模式整組反轉。Bootstrap 3 只拿來用 dropdown，它內建的 `.label` class 會蓋掉自訂樣式，所以區段標題用的是 `.section-label`。
+  - 整站只有黑白兩色（灰階是同一組墨色的深淺）：套件自帶的 icon 一律 `grayscale`，預設 icon 和 `favicon.ico` 是黑色，`favicon.svg` 在深色模式會變成白色；文字選取、`mark` 和焦點框也改成黑白，蓋掉 Bootstrap 和瀏覽器的藍色。
 - `Statistics:ListConfiguredServices` 仍然保留，用來控制 health check 是否列出使用中的服務。
 - `screenshots/` 是 README 用的截圖：本機用 nuget.org 的公開套件起一個 Development 站台，再用 Chrome headless 擷取（寬 1280，`--host-resolver-rules="MAP nuget.example.com 127.0.0.1:<port>"` 讓右上角顯示 `nuget.example.com`，深色版加 `--blink-settings=preferredColorScheme=0`）。
 
