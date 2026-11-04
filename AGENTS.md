@@ -7,7 +7,7 @@
 - **名稱**：專案、namespace、組件都改成 `Buffet.*`（例如 `Buffet.Core`、`BuffetOptions`、`Buffet.dll`），方案檔是 `Buffet.slnx`。
   - 預設資料庫檔是 `buffet.db`，設定根目錄的環境變數是 `BUFFET_CONFIG_ROOT`（上游叫 `BAGET_CONFIG_ROOT`）。
   - 連到上游的網址、說明上游行為的句子（例如「upstream BaGetter 建立的資料庫」），以及 `LICENSE` 裡上游的版權聲明都保留原名，不要改。
-  - `docs/`（上游文件網站）、`deployment templates/`、`.github/`、`CODE_OF_CONDUCT.md`、`CONTRIBUTING.md` 是上游留下來的檔案，沒有改名，內容講的是上游。
+  - `deployment templates/`、`.github/`、`CODE_OF_CONDUCT.md`、`CONTRIBUTING.md` 是上游留下來的檔案，沒有改名，內容講的是上游。上游的文件網站（原本的 `docs/`）已經刪除。
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`。
 - **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
   - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由移轉 `AddStorageBlobs` 建立。
@@ -20,7 +20,7 @@
 - **介面樣式**：單色主題（黑白、1.5px 外框、膠囊標籤、粗黑分隔線），色票與字體都在 `src/Buffet.Web/wwwroot/css/site.css` 的 `:root`，深色模式整組反轉。Bootstrap 3 只拿來用 dropdown，它內建的 `.label` class 會蓋掉自訂樣式，所以區段標題用的是 `.section-label`。
   - 整站只有黑白兩色（灰階是同一組墨色的深淺）：套件自帶的 icon 一律 `grayscale`，預設 icon 和 `favicon.ico` 是黑色，`favicon.svg` 在深色模式會變成白色；文字選取、`mark` 和焦點框也改成黑白，蓋掉 Bootstrap 和瀏覽器的藍色。
 - `Statistics:ListConfiguredServices` 仍然保留，用來控制 health check 是否列出使用中的服務。
-- `screenshots/` 是 README 用的截圖：本機用 nuget.org 的公開套件起一個 Development 站台，再用 Chrome headless 擷取（寬 1280，`--host-resolver-rules="MAP nuget.example.com 127.0.0.1:<port>"` 讓右上角顯示 `nuget.example.com`，深色版加 `--blink-settings=preferredColorScheme=0`）。
+- `docs/screenshots/` 是 README 用的截圖：本機用 nuget.org 的公開套件起一個 Development 站台，再用 Chrome headless 擷取（寬 1280，`--host-resolver-rules="MAP nuget.example.com 127.0.0.1:<port>"` 讓右上角顯示 `nuget.example.com`，深色版加 `--blink-settings=preferredColorScheme=0`）。
 
 ## 建置與測試
 
@@ -50,8 +50,8 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
   dotnet nuget push -s buffet -k <API-KEY> MyPackage.1.0.0.nupkg
   ```
 
-其他用戶端（NuGet CLI、Paket）的寫法見 `readme.md` 的〈上傳套件〉一節。
+其他用戶端（NuGet CLI、Paket）的寫法見 `docs/usage.md`。
 
 ## 文件
 
-網頁上已經不連到文件。設定方式（API key、`PathBase`、鏡像、健康檢查等）請看上游文件 <https://www.bagetter.com/docs>，原始檔在本存放庫的 `docs/docs/`。注意：上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
+使用者文件在 `docs/`（開始使用、設定、使用 feed 與上傳套件、從 BaGetter 搬過來），README 只放簡介和目錄。網頁上不連到文件。`docs/` 沒寫到的設定（例如鏡像的驗證方式）請看上游文件 <https://www.bagetter.com/docs>；上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
