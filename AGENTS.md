@@ -31,6 +31,20 @@ dotnet test Buffet.slnx
 
 `Dockerfile` 只 restore 和 publish `src/Buffet`。
 
+## 部署
+
+建容器映像不需要 Docker，用 SDK 直接推到 registry：
+
+```shell
+dotnet publish src/Buffet/Buffet.csproj -c Release -r linux-x64 --self-contained false \
+  -t:PublishContainer -p:ContainerRegistry=<registry> -p:ContainerRepository=buffet \
+  -p:ContainerImageTags=<版本> -p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:10.0 -p:ContainerUser=root
+```
+
+- `ContainerUser=root`：掛載進來的資料夾若屬於 root，SDK 預設的非 root `app` 使用者寫不了資料庫。
+- 資料庫啟動時會切成 WAL（`SqliteContext.RunMigrationsAsync`）。複製資料庫前要先停止服務（容器映像裡沒有 `sqlite3` 可以線上備份）。
+- 從上游 BaGetter（檔案系統儲存）搬過來時，只需要做一次 `dotnet /app/Buffet.dll import files /data`。
+
 ## 上傳套件
 
 網頁上沒有上傳頁，請用 NuGet 用戶端推送。service index 是 `https://<host>/v3/index.json`；如果有設 `PathBase`，要接在 host 後面。
@@ -54,4 +68,4 @@ dotnet nuget push -s https://<host>/v3/index.json -k <API-KEY> MyPackage.1.0.0.n
 
 ## 文件
 
-使用者文件在 `docs/`（開始使用、設定、使用 feed 與上傳套件、從 BaGetter 搬過來），README 只放簡介和目錄。網頁上不連到文件。`docs/` 沒寫到的設定（例如鏡像的驗證方式）請看上游文件 <https://www.bagetter.com/docs>；上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。
+使用者文件在 `docs/`（開始使用、設定、使用 feed 與上傳套件、從 BaGetter 搬過來），README 只放簡介和目錄。網頁上不連到文件。`docs/` 沒寫到的設定（例如鏡像的驗證方式）請看上游 BaGetter 的文件；上游文件裡關於資料庫類型、儲存體（檔案系統和各家雲端）、搜尋類型、Upload 頁、Statistics 頁的內容，在 Buffet 都不適用。

@@ -8,7 +8,7 @@
 # https://github.com/bjw-s/helm-charts/tree/main/charts/library/common/values.yaml
 #
 
-# -- environment variables. See more environment variables in the [BaGetter documentation](https://www.bagetter.com/docs/Installation/docker).
+# -- environment variables.
 # @default -- See below
 configMaps:
   bagetter-env:
@@ -20,7 +20,7 @@ configMaps:
       Storage__Path: "/data"
       Database__Type: "Sqlite"
       Database__ConnectionString: "Data Source=/data/bagetter.db"
-      # -- Additional settings. See [BaGetter configuration](https://www.bagetter.com/docs/configuration)
+      # -- Additional settings.
       #Mirror__Enabled: "true"
       #Mirror__PackageSource: "https://api.nuget.org/v3/index.json"
       #PackageDeletionBehavior: "HardDelete"

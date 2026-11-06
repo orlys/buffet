@@ -17,4 +17,4 @@
 | `Retention:MaxMajorVersions` 等 | 無 | 每個套件保留的版本數 |
 | `HealthCheck:Path` | `/health` | 健康檢查端點 |
 
-其他選項（例如鏡像的驗證方式）請看上游 BaGetter 的文件 <https://www.bagetter.com/docs>。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在 Buffet 都不適用。
+其他選項（例如鏡像的驗證方式）請看上游 BaGetter 的文件。上游文件裡關於資料庫類型、儲存體、搜尋類型、上傳頁和統計頁的內容，在 Buffet 都不適用。
