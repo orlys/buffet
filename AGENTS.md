@@ -7,7 +7,7 @@
 - **名稱**：專案、namespace、組件都改成 `Buffet.*`（例如 `Buffet.Core`、`BuffetOptions`、`Buffet.dll`），方案檔是 `Buffet.slnx`。
   - 預設資料庫檔是 `buffet.db`，設定根目錄的環境變數是 `BUFFET_CONFIG_ROOT`（上游叫 `BAGET_CONFIG_ROOT`）。
   - 連到上游的網址、說明上游行為的句子（例如「upstream BaGetter 建立的資料庫」），以及 `LICENSE` 裡上游的版權聲明都保留原名，不要改。
-  - `deployment templates/`、`.github/`、`CODE_OF_CONDUCT.md`、`CONTRIBUTING.md` 是上游留下來的檔案，沒有改名，內容講的是上游。上游的文件網站（原本的 `docs/`）已經刪除。
+  - 上游的 Helm chart（`deployment templates/`）、發佈用的 workflow、Issue/PR 範本、行為準則、貢獻指南、`.vscode/`、`.devcontainer/` 和文件網站（原本的 `docs/`）都已刪除，CI 只留 `.github/workflows/main.yml`。
 - **.NET 10**：`global.json` 指定 SDK 10.0（`rollForward: latestMajor`），所有專案都是 `net10.0`。
 - **整個 feed 就是一個 SQLite 檔**：目標是輕量簡單，唯一的設定是 `Database:ConnectionString`。
   - 套件的 metadata、搜尋，以及檔案（`.nupkg`、nuspec、readme、icon、`.pdb`）全部放在同一個資料庫。檔案存在 `StorageBlobs` 表，由 `SqliteStorageService` 用 `SqliteBlob` 串流讀寫，資料表由移轉 `AddStorageBlobs` 建立。
